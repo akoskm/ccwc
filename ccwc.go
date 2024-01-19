@@ -35,7 +35,7 @@ func parseParams(args []string) (map[string]string, error) {
 	return options, nil
 }
 
-func countWords(filename string) {
+func countBytes(filename string) {
 	file, error := os.ReadFile(filename)
 	if error != nil {
 		fmt.Println(error)
@@ -45,8 +45,8 @@ func countWords(filename string) {
 	fmt.Println(len(file), filename)
 }
 
-func countLines(filesname string) {
-	file, error := os.Open(filesname)
+func countLines(filename string) {
+	file, error := os.Open(filename)
 	if error != nil {
 		fmt.Println(error)
 		return
@@ -58,7 +58,24 @@ func countLines(filesname string) {
 		lineCount++
 	}
 
-	fmt.Println(lineCount, filesname)
+	fmt.Println(lineCount, filename)
+}
+
+func countWords(filename string) {
+	file, error := os.Open(filename)
+	if error != nil {
+		fmt.Println(error)
+		return
+	}
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanWords)
+	wordCount := 0
+	for scanner.Scan() {
+		wordCount++
+	}
+
+	fmt.Println(wordCount, filename)
 }
 
 func main() {
@@ -71,8 +88,10 @@ func main() {
 	}
 
 	if _, isPresent := result["-c"]; isPresent {
-		countWords(result["-c"])
+		countBytes(result["-c"])
 	} else if _, isPresent := result["-l"]; isPresent {
 		countLines(result["-l"])
+	} else if _, isPresent := result["-w"]; isPresent {
+		countWords(result["-w"])
 	}
 }
