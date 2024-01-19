@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -34,8 +35,7 @@ func parseParams(args []string) (map[string]string, error) {
 	return options, nil
 }
 
-func readFile(filename string) {
-	fmt.Println(filename)
+func countWords(filename string) {
 	file, error := os.ReadFile(filename)
 	if error != nil {
 		fmt.Println(error)
@@ -43,6 +43,22 @@ func readFile(filename string) {
 	}
 
 	fmt.Println(len(file), filename)
+}
+
+func countLines(filesname string) {
+	file, error := os.Open(filesname)
+	if error != nil {
+		fmt.Println(error)
+		return
+	}
+
+	scanner := bufio.NewScanner(file)
+	lineCount := 0
+	for scanner.Scan() {
+		lineCount++
+	}
+
+	fmt.Println(lineCount, filesname)
 }
 
 func main() {
@@ -55,6 +71,8 @@ func main() {
 	}
 
 	if _, isPresent := result["-c"]; isPresent {
-		readFile(result["-c"])
+		countWords(result["-c"])
+	} else if _, isPresent := result["-l"]; isPresent {
+		countLines(result["-l"])
 	}
 }
