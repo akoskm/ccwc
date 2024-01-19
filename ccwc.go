@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -88,13 +89,19 @@ func countChars(filename string) {
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+	reader := bufio.NewReader(file)
 	charCount := 0
-	for scanner.Scan() {
-		line := scanner.Text()
-		charCount += len(line)
-	}
+	for {
+		_, _, err := reader.ReadRune()
 
+		if err != nil {
+			break
+		}
+		if err == io.EOF {
+			break
+		}
+		charCount++
+	}
 	fmt.Println(charCount, filename)
 }
 
