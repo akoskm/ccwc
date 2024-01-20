@@ -96,9 +96,12 @@ func main() {
 
 	display := filename
 	flags := []string{"-c", "-l", "-w", "-m"}
+	// only the command and the filename are present, print all info
+	noArgs := len(args) == 1
+
 	for i := 0; i < len(flags); i++ {
 		currArg := flags[i]
-		if isFlagPresent(currArg, args) {
+		if isFlagPresent(currArg, args) || noArgs {
 			formattedResult := formatNumber(parsed[currArg], 8)
 			display = formattedResult + " " + display
 		}
