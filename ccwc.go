@@ -65,7 +65,7 @@ func formatNumber(num int, spacing int) string {
 	result := ""
 
 	if numLength >= spacing {
-		return result
+		return strNum
 	}
 
 	for _, char := range strNum {
