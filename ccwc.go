@@ -2,97 +2,31 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"unicode"
 )
 
-/**
- * Parse program arguments and turn them into a map
- * program -c test -f -d best -l -g => map[-c:test -d:best -f: -g: -l:]
- *
- */
-func parseParams(args []string) (map[string]string, error) {
-	if len(args) == 0 {
-		return nil, errors.New("No arguments provided.")
-	}
-	options := make(map[string]string)
-	for i, arg := range args {
-		// this is a new command starting with "-"
-		if arg[0] == '-' {
-			options[arg] = ""
-
-			// let's see if it has a parameter
-			if i+1 > len(args)-1 {
-				continue
-			}
-			hasParam := args[i+1]
-			if hasParam != "" && hasParam[0] != '-' {
-				options[arg] = hasParam
-			}
-		}
-	}
-	return options, nil
-}
-
-func countBytes(filename string) {
-	file, error := os.ReadFile(filename)
-	if error != nil {
-		fmt.Println(error)
-		return
-	}
-
-	fmt.Println(len(file), filename)
-}
-
-func countLines(filename string) {
+func countAll(filename string) map[string]int {
 	file, error := os.Open(filename)
 	if error != nil {
 		fmt.Println(error)
-		return
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	lineCount := 0
-	for scanner.Scan() {
-		lineCount++
-	}
-
-	fmt.Println(lineCount, filename)
-}
-
-func countWords(filename string) {
-	file, error := os.Open(filename)
-	if error != nil {
-		fmt.Println(error)
-		return
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanWords)
-	wordCount := 0
-	for scanner.Scan() {
-		wordCount++
-	}
-
-	fmt.Println(wordCount, filename)
-}
-
-func countChars(filename string) {
-	file, error := os.Open(filename)
-	if error != nil {
-		fmt.Println(error)
-		return
+		os.Exit(1)
 	}
 	defer file.Close()
 
 	reader := bufio.NewReader(file)
+	fileBytes := 0
 	charCount := 0
+	wordCount := 0
+	lineCount := 0
+	inWord := false
 	for {
-		_, _, err := reader.ReadRune()
+		char, size, err := reader.ReadRune()
+
+		fileBytes += size
 
 		if err != nil {
 			break
@@ -101,26 +35,74 @@ func countChars(filename string) {
 			break
 		}
 		charCount++
+		if unicode.IsSpace(char) {
+			if char == '\n' {
+				lineCount++
+			}
+			if inWord {
+				wordCount++
+			}
+			inWord = false
+		} else {
+			inWord = true
+		}
 	}
-	fmt.Println(charCount, filename)
+	result := map[string]int{
+		"-c": fileBytes,
+		"-l": lineCount,
+		"-w": wordCount,
+		"-m": charCount,
+	}
+	return result
+}
+
+/**
+ * Prefix a number with spaces until it hits @spacing length
+ */
+func formatNumber(num int, spacing int) string {
+	strNum := strconv.Itoa(num)
+	numLength := len(strNum)
+	result := ""
+
+	if numLength >= spacing {
+		return result
+	}
+
+	for _, char := range strNum {
+		result += string(char)
+	}
+
+	for i := 0; i < spacing-numLength; i++ {
+		result = " " + result
+	}
+	return result
+}
+
+func isFlagPresent(flag string, args []string) bool {
+	for i := 0; i < len(args); i++ {
+		if args[i] == flag {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {
 	args := os.Args[1:]
-	result, errors := parseParams(args)
 
-	if errors != nil {
-		fmt.Println(errors)
-		return
+	filename := args[len(args)-1]
+
+	parsed := countAll(filename)
+
+	display := filename
+	flags := []string{"-c", "-l", "-w", "-m"}
+	for i := 0; i < len(flags); i++ {
+		currArg := flags[i]
+		if isFlagPresent(currArg, args) {
+			formattedResult := formatNumber(parsed[currArg], 8)
+			display = formattedResult + " " + display
+		}
 	}
 
-	if _, isPresent := result["-c"]; isPresent {
-		countBytes(result["-c"])
-	} else if _, isPresent := result["-l"]; isPresent {
-		countLines(result["-l"])
-	} else if _, isPresent := result["-w"]; isPresent {
-		countWords(result["-w"])
-	} else if _, isPresent := result["-m"]; isPresent {
-		countChars(result["-m"])
-	}
+	fmt.Println(display)
 }
